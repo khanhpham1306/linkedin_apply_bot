@@ -64,8 +64,6 @@ def run() -> None:
         for query in search_conf.get("search_queries", []):
             logger.info("Scraping: %s in %s", query["keywords"], query["location"])
             fetched = scraper.fetch_jobs(
-                email=conf.linkedin_email,
-                password=conf.linkedin_password,
                 keywords=query["keywords"],
                 location=query["location"],
                 limit=limit_per_query,

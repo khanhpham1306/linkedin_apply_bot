@@ -1,10 +1,11 @@
-"""LinkedIn job scraper using the unofficial linkedin-api library."""
+"""LinkedIn job scraper using JobSpy — no LinkedIn account required."""
 
 import logging
 import time
 from datetime import datetime, timezone
 
-from linkedin_api import Linkedin
+import pandas as pd
+from jobspy import scrape_jobs
 
 logger = logging.getLogger(__name__)
 
@@ -13,40 +14,22 @@ class ScraperError(Exception):
     """Raised when scraping fails after all retries."""
 
 
-def _build_apply_url(job_id: str) -> str:
-    return f"https://www.linkedin.com/jobs/view/{job_id}/"
-
-
-def _extract_description(job_detail: dict) -> str:
-    """Extract plain-text description from a job detail response."""
-    try:
-        desc = job_detail.get("description", {})
-        # The API returns description as a dict with 'text' key
-        if isinstance(desc, dict):
-            return desc.get("text", "")
-        return str(desc)
-    except Exception:
-        return ""
-
-
 def fetch_jobs(
-    email: str,
-    password: str,
     keywords: str,
     location: str,
     limit: int = 50,
-    listed_at: int = 86400,
+    hours_old: int = 24,
 ) -> list[dict]:
     """
     Fetch recent LinkedIn job postings matching keywords and location.
 
+    No LinkedIn account is required — uses LinkedIn's public guest API via JobSpy.
+
     Args:
-        email: LinkedIn account email (throwaway account recommended).
-        password: LinkedIn account password.
         keywords: Job search keywords, e.g. "Python Backend Engineer".
         location: Location string, e.g. "Ho Chi Minh City, Vietnam".
-        limit: Maximum number of raw jobs to retrieve before filtering.
-        listed_at: Only jobs posted within this many seconds (default: 24h).
+        limit: Maximum number of jobs to retrieve.
+        hours_old: Only jobs posted within this many hours (default: 24h).
 
     Returns:
         List of job dicts with keys:
@@ -55,7 +38,7 @@ def fetch_jobs(
     last_error = None
     for attempt in range(1, 4):
         try:
-            return _do_fetch(email, password, keywords, location, limit, listed_at)
+            return _do_fetch(keywords, location, limit, hours_old)
         except ScraperError:
             raise
         except Exception as exc:
@@ -73,73 +56,43 @@ def fetch_jobs(
 
 
 def _do_fetch(
-    email: str,
-    password: str,
     keywords: str,
     location: str,
     limit: int,
-    listed_at: int,
+    hours_old: int,
 ) -> list[dict]:
-    api = Linkedin(email, password)
-
-    raw_jobs = api.search_jobs(
-        keywords=keywords,
-        location_name=location,
-        limit=limit,
-        listed_at=listed_at,
+    df = scrape_jobs(
+        site_name=["linkedin"],
+        search_term=keywords,
+        location=location,
+        results_wanted=limit,
+        hours_old=hours_old,
     )
 
-    if not raw_jobs:
-        logger.info("LinkedIn search returned 0 jobs.")
+    if df is None or df.empty:
+        logger.info("LinkedIn search returned 0 jobs for '%s' in '%s'.", keywords, location)
         return []
 
-    jobs = []
+    jobs = _normalize(df)
+    logger.info("Fetched %d jobs from LinkedIn.", len(jobs))
+    return jobs
+
+
+def _normalize(df: pd.DataFrame) -> list[dict]:
+    """Convert a JobSpy DataFrame to the project's standard job dict format."""
     scraped_at = datetime.now(timezone.utc).isoformat()
-
-    for raw in raw_jobs:
-        job_id = raw.get("trackingUrn", "").split(":")[-1]
-        if not job_id:
-            # Fallback: try entityUrn
-            job_id = raw.get("entityUrn", "").split(":")[-1]
-        if not job_id:
+    jobs = []
+    for _, row in df.iterrows():
+        job_id = str(row.get("id", "")).strip()
+        if not job_id or job_id == "nan":
             continue
-
-        # Fetch full job detail for description
-        try:
-            detail = api.get_job(job_id)
-        except Exception as exc:
-            logger.warning("Could not fetch detail for job %s: %s", job_id, exc)
-            detail = {}
-
-        title = (
-            detail.get("title")
-            or raw.get("title", "Unknown Title")
-        )
-
-        company_name = ""
-        company_data = detail.get("companyDetails", {})
-        if isinstance(company_data, dict):
-            company_name = (
-                company_data.get("com.linkedin.voyager.deco.jobs.web.shared"
-                                  ".WebCompactJobPostingCompany", {})
-                .get("companyResolutionResult", {})
-                .get("name", "")
-            )
-        if not company_name:
-            company_name = raw.get("companyName", "Unknown Company")
-
-        location_str = detail.get("formattedLocation") or location
-        description = _extract_description(detail)
-
         jobs.append({
             "job_id": job_id,
-            "title": title,
-            "company": company_name,
-            "location": location_str,
-            "apply_url": _build_apply_url(job_id),
-            "description": description,
+            "title": str(row.get("title", "Unknown Title")),
+            "company": str(row.get("company", "Unknown Company")),
+            "location": str(row.get("location", "")),
+            "apply_url": str(row.get("job_url", "")),
+            "description": str(row.get("description", "")),
             "scraped_at": scraped_at,
         })
-
-    logger.info("Fetched %d jobs from LinkedIn.", len(jobs))
     return jobs

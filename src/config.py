@@ -17,8 +17,6 @@ def _optional(key: str, default: str = "") -> str:
 
 class Config:
     def __init__(self) -> None:
-        self.linkedin_email: str = _require("LINKEDIN_EMAIL")
-        self.linkedin_password: str = _require("LINKEDIN_PASSWORD")
         self.google_service_account_json: str = _require("GOOGLE_SERVICE_ACCOUNT_JSON")
         self.google_sheet_id: str = _require("GOOGLE_SHEET_ID")
         self.telegram_bot_token: str = _require("TELEGRAM_BOT_TOKEN")
