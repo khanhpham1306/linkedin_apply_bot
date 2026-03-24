@@ -1,0 +1,9 @@
+linkedin-api==2.1.1
+sentence-transformers==3.0.0
+gspread==6.1.2
+google-auth==2.29.0
+requests==2.32.3
+beautifulsoup4==4.12.3
+numpy==1.26.4
+python-dateutil==2.9.0
+pytest==8.2.2
