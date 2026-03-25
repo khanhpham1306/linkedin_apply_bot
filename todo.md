@@ -9,26 +9,25 @@
 
 ### Code (Done)
 - [x] Set up repository structure (`src/`, `data/`, `tests/`, `.github/`)
-- [x] Write `src/scraper.py` — LinkedIn job fetching via `linkedin-api` with retry logic
+- [x] Write `src/scraper.py` — LinkedIn job fetching via `python-jobspy` (no LinkedIn account needed) with retry logic
 - [x] Write `src/embeddings.py` — semantic scoring with `all-MiniLM-L6-v2`, batch encoding, cosine similarity
 - [x] Write `src/sheets.py` — Google Sheets deduplication (15-day window), job history log, run log
 - [x] Write `src/notifier.py` — consolidated Telegram message dispatch (one message per run)
 - [x] Write `src/config.py` — centralised env var loading with fail-fast validation
-- [x] Write `src/runner.py` — end-to-end orchestrator sequencing all modules
+- [x] Write `src/cv_parser.py` — auto-derives LinkedIn search queries from CV text via Claude Haiku (cached in `data/derived_queries.json`)
+- [x] Write `src/runner.py` — end-to-end orchestrator sequencing all modules; gracefully degrades if Sheets API unavailable
 - [x] Write `.github/workflows/hunter.yml` — daily cron at 01:00 UTC (08:00 UTC+7), pip + HuggingFace model caching, failure notification step
-- [x] Write `config.json` — search queries and tuning parameters (version-controlled)
+- [x] Write `config.json` — search queries and tuning parameters (version-controlled; queries here override CV-derived ones)
 - [x] Write `data/cv.md` — real CV (Pham Gia Khanh) as source of truth for similarity scoring
 - [x] Write `tests/` — unit tests for embeddings, scraper parsing, and Sheets dedup logic
+- [x] Write `CLAUDE.md` — architecture and dev command reference for Claude Code
 - [x] Pin all dependencies in `requirements.txt`
 
 ### Infrastructure Setup (Pending — manual steps)
-- [ ] Create a **burner LinkedIn account** (use a separate email, not your main account)
 - [ ] Create a **Google Cloud project**, enable Sheets API, create a service account, download JSON key
-- [ ] Create the **Google Sheets spreadsheet** (two tabs: `job_history`, `run_log` will be auto-created on first run)
+- [ ] Create the **Google Sheets spreadsheet** (`job_history`, `run_log`, `bot_state` tabs auto-created on first run)
 - [ ] Create a **Telegram Bot** via BotFather and retrieve your personal Chat ID
-- [ ] Add all 6 **GitHub Secrets** to the repository:
-  - `LINKEDIN_EMAIL`
-  - `LINKEDIN_PASSWORD`
+- [ ] Add all 4 **GitHub Secrets** to the repository:
   - `GOOGLE_SERVICE_ACCOUNT_JSON`
   - `GOOGLE_SHEET_ID`
   - `TELEGRAM_BOT_TOKEN`
@@ -42,23 +41,24 @@
 
 ---
 
-## Phase 2 — Version 1.0: The Tailor `[DONE]`
+## Phase 2 — Version 1.0: The Tailor `[IN PROGRESS]`
 **Goal:** Add inline Apply buttons to each Telegram job card. Tapping triggers AI to rewrite the CV for that specific JD and return the tailored CV as a file in Telegram.
 
 **Architecture (no Cloudflare Worker needed):**
-- GitHub Actions poller runs every 30 min via cron, calls Telegram `getUpdates`, processes button callbacks
-- Offset (last processed update_id) is persisted in a new `bot_state` Google Sheet
+- GitHub Actions poller runs once daily at 20:00 UTC+7 via cron, calls Telegram `getUpdates`, processes button callbacks
+- Offset (last processed update_id) is persisted in a `bot_state` Google Sheet tab
 - Job descriptions are stored (truncated to 5 000 chars) in `job_history` sheet so Claude has context
 - Tailored CV delivered as a `.md` file directly in Telegram (no SMTP/email required)
 
+### Code (Done)
 - [x] Add **"✅ Apply #N" inline buttons** to each job in the Telegram notification (`src/notifier.py`)
 - [x] Update `src/sheets.py` — store `telegram_message_id` & `description` per job; `get_job_by_id`; `update_job_status`; `get/set_bot_state`
 - [x] Create `src/tailor.py` — AI-powered CV rewriting using Claude `claude-sonnet-4-6`
-- [x] Create `src/poller.py` — polls Telegram `getUpdates`, handles `apply:{job_id}` callbacks end-to-end
-- [x] Create `.github/workflows/poller.yml` — scheduled every 30 min, uses lightweight `requirements-tailor.txt`
+- [x] Create `src/poller.py` — polls Telegram `getUpdates`, handles `apply:{job_id}` callbacks end-to-end; warns user if re-applying to an already-applied job
+- [x] Create `.github/workflows/poller.yml` — runs once daily at 20:00 UTC+7, uses lightweight `requirements-tailor.txt`
 - [x] Create `requirements-tailor.txt` — minimal deps (anthropic, gspread, google-auth, requests)
 
-### Infrastructure Setup (manual steps still needed)
+### Infrastructure Setup (Pending — manual steps)
 - [ ] Add `ANTHROPIC_API_KEY` to GitHub repository secrets
 - [ ] Enable the poller workflow in GitHub Actions (it auto-starts on push to default branch)
 - [ ] End-to-end test: tap "✅ Apply #N" → poller picks up callback → Claude rewrites CV → `.md` file arrives in Telegram → Sheets status → `APPLIED`
@@ -80,13 +80,8 @@
 
 | Secret | Phase | Description |
 |---|---|---|
-| `LINKEDIN_EMAIL` | 1 | Burner LinkedIn account email |
-| `LINKEDIN_PASSWORD` | 1 | Burner LinkedIn account password |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | 1 | Full service account JSON as a single-line string |
 | `GOOGLE_SHEET_ID` | 1 | ID from the Google Sheets URL |
 | `TELEGRAM_BOT_TOKEN` | 1 | From BotFather |
 | `TELEGRAM_CHAT_ID` | 1 | Your personal Telegram user ID |
-| `ANTHROPIC_API_KEY` | 2 | For Claude-powered CV tailoring |
-| `SMTP_USER` | 2 | Email address used to send tailored CVs |
-| `SMTP_PASSWORD` | 2 | App password for the SMTP email account |
-| `CLOUDFLARE_WORKER_URL` | 2 | Public URL of the deployed Cloudflare Worker |
+| `ANTHROPIC_API_KEY` | 1+2 | For CV-derived search queries (Phase 1, optional) and Claude-powered CV tailoring (Phase 2, required) |
