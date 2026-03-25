@@ -1,5 +1,9 @@
 {
-  "search_queries": [],
+  "search_queries": [
+    {"keywords": "Strategy Manager", "location": "Vietnam"},
+    {"keywords": "Category Manager", "location": "Vietnam"},
+    {"keywords": "Business Development Manager", "location": "Vietnam"}
+  ],
   "jobs_to_scrape_per_query": 50,
   "top_n_recommendations": 5,
   "dedup_window_days": 15
