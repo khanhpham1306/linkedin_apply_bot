@@ -1,8 +1,5 @@
 {
-  "search_queries": [
-    {"keywords": "Python backend engineer", "location": "Vietnam"},
-    {"keywords": "Data engineer", "location": "Vietnam"}
-  ],
+  "search_queries": [],
   "jobs_to_scrape_per_query": 50,
   "top_n_recommendations": 5,
   "dedup_window_days": 15

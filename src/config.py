@@ -22,6 +22,7 @@ class Config:
         self.telegram_bot_token: str = _require("TELEGRAM_BOT_TOKEN")
         self.telegram_chat_id: str = _require("TELEGRAM_CHAT_ID")
         self.github_run_id: str = _optional("GITHUB_RUN_ID", "local")
+        self.anthropic_api_key: str = _optional("ANTHROPIC_API_KEY")
 
     def google_service_account_info(self) -> dict:
         """Parse the service account JSON string into a dict."""

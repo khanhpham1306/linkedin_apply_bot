@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from src import config as cfg
-from src import embeddings, notifier, scraper, sheets
+from src import cv_parser, embeddings, notifier, scraper, sheets
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,11 +24,8 @@ def _load_search_config() -> dict:
     if CONFIG_PATH.exists():
         with CONFIG_PATH.open() as f:
             return json.load(f)
-    # Sensible defaults if config.json is absent
     return {
-        "search_queries": [
-            {"keywords": "Python backend engineer", "location": "Vietnam"}
-        ],
+        "search_queries": [],
         "jobs_to_scrape_per_query": 50,
         "top_n_recommendations": 5,
         "dedup_window_days": 15,
@@ -58,10 +55,23 @@ def run() -> None:
         cv_text = CV_PATH.read_text(encoding="utf-8")
         logger.info("CV loaded (%d chars).", len(cv_text))
 
-        # 2. Scrape LinkedIn
+        # 2. Resolve search queries (config override or CV-derived)
+        search_queries = search_conf.get("search_queries") or []
+        if not search_queries:
+            default_location = "Vietnam"
+            search_queries = cv_parser.extract_search_queries(
+                cv_text, default_location, conf.anthropic_api_key
+            )
+        if not search_queries:
+            raise RuntimeError(
+                "No search queries available. Set search_queries in config.json "
+                "or provide ANTHROPIC_API_KEY so they can be derived from the CV."
+            )
+
+        # 3. Scrape LinkedIn
         all_jobs: list[dict] = []
         seen_ids_within_scrape: set[str] = set()
-        for query in search_conf.get("search_queries", []):
+        for query in search_queries:
             logger.info("Scraping: %s in %s", query["keywords"], query["location"])
             fetched = scraper.fetch_jobs(
                 keywords=query["keywords"],
@@ -77,7 +87,7 @@ def run() -> None:
         run_data["jobs_scraped"] = len(all_jobs)
         logger.info("Total unique jobs scraped: %d", len(all_jobs))
 
-        # 3. Deduplication against Sheets history
+        # 4. Deduplication against Sheets history
         service_account_info = conf.google_service_account_info()
         sheets_available = True
         try:
@@ -108,21 +118,21 @@ def run() -> None:
             )
             return
 
-        # 4. Score jobs against CV
+        # 5. Score jobs against CV
         ranked = embeddings.rank_jobs(cv_text, new_jobs)
         top_jobs = ranked[:top_n]
         run_data["jobs_recommended"] = len(top_jobs)
 
-        # 5. Write recommendations to Sheets
+        # 6. Write recommendations to Sheets
         if sheets_available:
             sheets.append_recommendations(service_account_info, conf.google_sheet_id, top_jobs)
 
-        # 6. Write run log
+        # 7. Write run log
         run_data["status"] = "SUCCESS"
         if sheets_available:
             sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
 
-        # 7. Send Telegram notification
+        # 8. Send Telegram notification
         notifier.send_recommendations(
             conf.telegram_bot_token, conf.telegram_chat_id,
             top_jobs, run_data,
