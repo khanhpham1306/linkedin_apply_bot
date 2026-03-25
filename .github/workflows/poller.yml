@@ -2,7 +2,7 @@ name: Telegram Poller (every 30 min)
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # Every 30 minutes
+    - cron: '0 13 * * *'     # Once daily at 13:00 UTC (20:00 UTC+7)
   workflow_dispatch:           # Allow manual trigger for testing
 
 jobs:
