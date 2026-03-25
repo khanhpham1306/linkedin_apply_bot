@@ -138,6 +138,7 @@ def get_job_by_id(service_account_info: dict, sheet_id: str, job_id: str) -> dic
             "location": row_dict.get("location", ""),
             "apply_url": row_dict.get("url", ""),
             "description": row_dict.get("description", ""),
+            "status": row_dict.get("status", ""),
         }
     return None
 
