@@ -80,6 +80,18 @@ def _send_document(
     )
 
 
+def _send_pdf_document(
+    token: str, chat_id: str, pdf_bytes: bytes, filename: str, caption: str = ""
+) -> None:
+    """Upload a PDF file as a Telegram document."""
+    requests.post(
+        _tg_url(token, "sendDocument"),
+        data={"chat_id": chat_id, "caption": caption[:1024]},
+        files={"document": (filename, io.BytesIO(pdf_bytes), "application/pdf")},
+        timeout=60,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Core apply handler
 # ---------------------------------------------------------------------------
@@ -134,12 +146,21 @@ def _handle_apply(
         _send_message(token, chat_id, f"❌ CV tailoring failed:\n<code>{str(exc)[:500]}</code>")
         return
 
-    # 4. Send tailored CV as .md document
+    # 4. Send tailored CV as PDF (with .md fallback)
     safe_company = "".join(c if c.isalnum() else "_" for c in company)
-    filename = f"CV_{safe_company}_{job_id}.md"
     caption = f"✅ Tailored CV — {title} @ {company}"
-    _send_document(token, chat_id, tailored_cv, filename, caption)
-    logger.info("Tailored CV sent for job %s.", job_id)
+
+    try:
+        from src import pdf_generator
+        pdf_bytes = pdf_generator.markdown_to_pdf(tailored_cv)
+        filename = f"CV_{safe_company}_{job_id}.pdf"
+        _send_pdf_document(token, chat_id, pdf_bytes, filename, caption)
+        logger.info("Tailored CV (PDF) sent for job %s.", job_id)
+    except Exception as pdf_exc:
+        logger.warning("PDF generation failed for job %s (%s). Falling back to .md.", job_id, pdf_exc)
+        filename = f"CV_{safe_company}_{job_id}.md"
+        _send_document(token, chat_id, tailored_cv, filename, caption)
+        logger.info("Tailored CV (.md fallback) sent for job %s.", job_id)
 
     # 5. Update Sheets status
     try:

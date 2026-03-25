@@ -8,3 +8,5 @@ beautifulsoup4==4.12.3
 numpy>=1.26.3
 python-dateutil==2.9.0
 pytest==8.2.2
+markdown==3.6
+weasyprint==68.1
