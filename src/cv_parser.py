@@ -3,6 +3,7 @@
 import hashlib
 import json
 import logging
+import re
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,15 @@ def extract_search_queries(cv_text: str, location: str, api_key: str) -> list[di
             messages=[{"role": "user", "content": _PROMPT.format(cv_text=cv_text)}],
         )
         raw = message.content[0].text.strip()
+        # Strip markdown code fences that some models add despite instructions
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(?:json)?\s*\n?", "", raw)
+            raw = re.sub(r"\s*```$", "", raw)
+            raw = raw.strip()
+        logger.debug("Raw Claude response: %r", raw)
+        if not raw:
+            logger.error("Claude returned an empty response; cannot extract queries.")
+            return []
         keywords_list: list[str] = json.loads(raw)
         queries = [{"keywords": kw, "location": location} for kw in keywords_list]
         _save_cache(current_hash, queries)
