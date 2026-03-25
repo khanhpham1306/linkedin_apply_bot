@@ -42,18 +42,26 @@
 
 ---
 
-## Phase 2 — Version 1.0: The Tailor `[NOT STARTED]`
-**Goal:** Add an "OK" inline button to each Telegram job card. Clicking it triggers AI to rewrite the CV for that specific JD and email the tailored PDF.
+## Phase 2 — Version 1.0: The Tailor `[DONE]`
+**Goal:** Add inline Apply buttons to each Telegram job card. Tapping triggers AI to rewrite the CV for that specific JD and return the tailored CV as a file in Telegram.
 
-- [ ] Deploy a **Cloudflare Worker** to receive Telegram Webhooks and call the GitHub Actions `workflow_dispatch` API
-- [ ] Register the Telegram Webhook URL pointing at the Cloudflare Worker
-- [ ] Add **"OK" inline buttons** to each job in the Telegram notification (`src/notifier.py`)
-- [ ] Create `src/tailor.py` — AI-powered CV rewriting using Claude API (MCP tools) against a specific JD
-- [ ] Create `.github/workflows/tailor.yml` — workflow triggered by `workflow_dispatch` with `job_id` input
-- [ ] Create `src/mailer.py` — SMTP email dispatch with the tailored CV (PDF/Markdown) attached
-- [ ] Update `src/sheets.py` — store `telegram_message_id` per job; update status to `APPLIED` after email sent
-- [ ] Store new secrets: `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`), `SMTP_USER`, `SMTP_PASSWORD`, `CLOUDFLARE_WORKER_URL`
-- [ ] End-to-end test: click "OK" → Cloudflare → GitHub Actions → AI rewrites CV → email arrives
+**Architecture (no Cloudflare Worker needed):**
+- GitHub Actions poller runs every 30 min via cron, calls Telegram `getUpdates`, processes button callbacks
+- Offset (last processed update_id) is persisted in a new `bot_state` Google Sheet
+- Job descriptions are stored (truncated to 5 000 chars) in `job_history` sheet so Claude has context
+- Tailored CV delivered as a `.md` file directly in Telegram (no SMTP/email required)
+
+- [x] Add **"✅ Apply #N" inline buttons** to each job in the Telegram notification (`src/notifier.py`)
+- [x] Update `src/sheets.py` — store `telegram_message_id` & `description` per job; `get_job_by_id`; `update_job_status`; `get/set_bot_state`
+- [x] Create `src/tailor.py` — AI-powered CV rewriting using Claude `claude-sonnet-4-6`
+- [x] Create `src/poller.py` — polls Telegram `getUpdates`, handles `apply:{job_id}` callbacks end-to-end
+- [x] Create `.github/workflows/poller.yml` — scheduled every 30 min, uses lightweight `requirements-tailor.txt`
+- [x] Create `requirements-tailor.txt` — minimal deps (anthropic, gspread, google-auth, requests)
+
+### Infrastructure Setup (manual steps still needed)
+- [ ] Add `ANTHROPIC_API_KEY` to GitHub repository secrets
+- [ ] Enable the poller workflow in GitHub Actions (it auto-starts on push to default branch)
+- [ ] End-to-end test: tap "✅ Apply #N" → poller picks up callback → Claude rewrites CV → `.md` file arrives in Telegram → Sheets status → `APPLIED`
 
 ---
 

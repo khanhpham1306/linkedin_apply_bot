@@ -1,0 +1,60 @@
+name: Telegram Poller (every 30 min)
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # Every 30 minutes
+  workflow_dispatch:           # Allow manual trigger for testing
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-tailor-${{ hashFiles('requirements-tailor.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-tailor-
+
+      - name: Install dependencies
+        run: pip install -r requirements-tailor.txt
+
+      - name: Poll Telegram and process callbacks
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python -m src.poller
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python -c "
+          import os, requests
+          token = os.environ['TELEGRAM_BOT_TOKEN']
+          chat_id = os.environ['TELEGRAM_CHAT_ID']
+          requests.post(
+            f'https://api.telegram.org/bot{token}/sendMessage',
+            json={
+              'chat_id': chat_id,
+              'text': '❌ Telegram Poller workflow FAILED. Check GitHub Actions logs.',
+              'parse_mode': 'HTML'
+            }
+          )
+          "

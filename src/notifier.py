@@ -1,5 +1,6 @@
 """Telegram notification dispatch."""
 
+import json
 import logging
 from datetime import datetime, timezone
 
@@ -7,18 +8,19 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_API = "https://api.telegram.org/bot{token}/sendMessage"
+TELEGRAM_API = "https://api.telegram.org/bot{token}/{method}"
 
 
-def _send(token: str, chat_id: str, text: str) -> None:
-    url = TELEGRAM_API.format(token=token)
-    resp = requests.post(
-        url,
-        json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"},
-        timeout=15,
-    )
+def _send(token: str, chat_id: str, text: str, reply_markup: dict | None = None) -> dict:
+    """Send a message and return the parsed response JSON."""
+    url = TELEGRAM_API.format(token=token, method="sendMessage")
+    payload: dict = {"chat_id": chat_id, "text": text, "parse_mode": "HTML"}
+    if reply_markup:
+        payload["reply_markup"] = json.dumps(reply_markup)
+    resp = requests.post(url, json=payload, timeout=15)
     resp.raise_for_status()
     logger.info("Telegram message sent (status %d).", resp.status_code)
+    return resp.json()
 
 
 def send_recommendations(
@@ -26,15 +28,18 @@ def send_recommendations(
     chat_id: str,
     jobs: list[dict],
     run_stats: dict,
-) -> None:
+) -> int | None:
     """
-    Send a consolidated job recommendations message.
+    Send a consolidated job recommendations message with inline Apply buttons.
 
     Args:
         token: Telegram bot token.
         chat_id: Target chat or user ID.
         jobs: Ranked job list (top N).
         run_stats: Dict with keys: jobs_scraped, jobs_after_dedup, jobs_recommended.
+
+    Returns:
+        The Telegram message_id of the sent message, or None on failure.
     """
     today = datetime.now(timezone.utc).strftime("%-d %b %Y")
     lines = [f"<b>Job Recommendations - {today}</b>\n"]
@@ -59,7 +64,27 @@ def send_recommendations(
             f"(fewer than the target of 5).</i>"
         )
 
-    _send(token, chat_id, "\n".join(lines))
+    if jobs:
+        lines.append("\n<i>Tap a button below to tailor your CV for that job:</i>")
+
+    # Build inline keyboard: 3 buttons per row
+    keyboard_rows: list[list[dict]] = []
+    row: list[dict] = []
+    for i, job in enumerate(jobs, start=1):
+        job_id = job.get("job_id", "")
+        row.append({"text": f"✅ Apply #{i}", "callback_data": f"apply:{job_id}"})
+        if len(row) == 3:
+            keyboard_rows.append(row)
+            row = []
+    if row:
+        keyboard_rows.append(row)
+
+    reply_markup = {"inline_keyboard": keyboard_rows} if keyboard_rows else None
+
+    result = _send(token, chat_id, "\n".join(lines), reply_markup=reply_markup)
+    message_id: int | None = result.get("result", {}).get("message_id")
+    logger.info("Recommendation message sent, message_id=%s", message_id)
+    return message_id
 
 
 def send_error(token: str, chat_id: str, error: str) -> None:

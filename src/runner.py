@@ -123,20 +123,23 @@ def run() -> None:
         top_jobs = ranked[:top_n]
         run_data["jobs_recommended"] = len(top_jobs)
 
-        # 6. Write recommendations to Sheets
-        if sheets_available:
-            sheets.append_recommendations(service_account_info, conf.google_sheet_id, top_jobs)
-
-        # 7. Write run log
-        run_data["status"] = "SUCCESS"
-        if sheets_available:
-            sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
-
-        # 8. Send Telegram notification
-        notifier.send_recommendations(
+        # 6. Send Telegram notification (get message_id for Sheets tracking)
+        message_id = notifier.send_recommendations(
             conf.telegram_bot_token, conf.telegram_chat_id,
             top_jobs, run_data,
         )
+
+        # 7. Write recommendations to Sheets (include telegram_message_id)
+        if sheets_available:
+            sheets.append_recommendations(
+                service_account_info, conf.google_sheet_id, top_jobs,
+                telegram_message_id=message_id,
+            )
+
+        # 8. Write run log
+        run_data["status"] = "SUCCESS"
+        if sheets_available:
+            sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
         logger.info("Run completed successfully. Recommended %d jobs.", len(top_jobs))
 
     except Exception as exc:
