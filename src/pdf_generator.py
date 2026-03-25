@@ -6,8 +6,13 @@ Usage:
     pdf_bytes = markdown_to_pdf(md_text)
 """
 
+import base64
+from pathlib import Path
+
 import markdown as _markdown
 from weasyprint import HTML as _HTML
+
+_PHOTO_PATH = Path(__file__).parent.parent / "profile_image.jpg"
 
 _CSS = """
 @page {
@@ -45,8 +50,24 @@ h1 + p {
     margin: 0 0 10pt 0;
 }
 
+/* ── Profile photo (floated top-right of header) ── */
+.profile-photo-wrapper {
+    float: right;
+    margin: 0 0 6pt 12pt;
+}
+
+.profile-photo {
+    width: 78pt;
+    height: 78pt;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5pt solid #1a1a2e;
+    display: block;
+}
+
 /* ── Section headings ── */
 h2 {
+    clear: both;
     font-size: 10.5pt;
     font-weight: bold;
     text-transform: uppercase;
@@ -108,9 +129,25 @@ _HTML_TEMPLATE = """\
 """
 
 
+def _photo_data_url() -> str | None:
+    """Return a base64 data URL for the profile photo, or None if file is missing."""
+    if not _PHOTO_PATH.exists():
+        return None
+    b64 = base64.b64encode(_PHOTO_PATH.read_bytes()).decode()
+    return f"data:image/jpeg;base64,{b64}"
+
+
 def _render_html(md_text: str) -> str:
     """Convert Markdown text to a complete HTML document string."""
     body = _markdown.markdown(md_text, extensions=["nl2br"])
+    photo_url = _photo_data_url()
+    if photo_url:
+        photo_tag = (
+            '<div class="profile-photo-wrapper">'
+            f'<img src="{photo_url}" class="profile-photo" alt="Profile photo">'
+            "</div>"
+        )
+        body = photo_tag + body
     return _HTML_TEMPLATE.format(css=_CSS, body=body)
 
 
