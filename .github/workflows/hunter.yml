@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 1 * * *'   # 01:00 UTC = 08:00 AM UTC+7
   workflow_dispatch:        # Allow manual trigger for testing
+  push:
+    branches:
+      - claude/test-workflow-gIHx6
 
 jobs:
   hunt:
