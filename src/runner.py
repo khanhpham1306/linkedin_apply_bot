@@ -79,9 +79,19 @@ def run() -> None:
 
         # 3. Deduplication against Sheets history
         service_account_info = conf.google_service_account_info()
-        seen_ids = sheets.get_seen_job_ids(
-            service_account_info, conf.google_sheet_id, days=dedup_days
-        )
+        sheets_available = True
+        try:
+            seen_ids = sheets.get_seen_job_ids(
+                service_account_info, conf.google_sheet_id, days=dedup_days
+            )
+        except PermissionError as exc:
+            logger.warning(
+                "Google Sheets API unavailable (check that the API is enabled and "
+                "the service account has access): %s. Skipping deduplication.", exc
+            )
+            seen_ids = set()
+            sheets_available = False
+
         new_jobs = [j for j in all_jobs if j["job_id"] not in seen_ids]
         run_data["jobs_after_dedup"] = len(new_jobs)
         logger.info("Jobs after dedup: %d", len(new_jobs))
@@ -90,7 +100,8 @@ def run() -> None:
             logger.warning("No new jobs after deduplication. Nothing to recommend.")
             run_data["status"] = "SUCCESS"
             run_data["jobs_recommended"] = 0
-            sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
+            if sheets_available:
+                sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
             notifier.send_recommendations(
                 conf.telegram_bot_token, conf.telegram_chat_id,
                 [], run_data,
@@ -103,11 +114,13 @@ def run() -> None:
         run_data["jobs_recommended"] = len(top_jobs)
 
         # 5. Write recommendations to Sheets
-        sheets.append_recommendations(service_account_info, conf.google_sheet_id, top_jobs)
+        if sheets_available:
+            sheets.append_recommendations(service_account_info, conf.google_sheet_id, top_jobs)
 
         # 6. Write run log
         run_data["status"] = "SUCCESS"
-        sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
+        if sheets_available:
+            sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
 
         # 7. Send Telegram notification
         notifier.send_recommendations(
@@ -122,11 +135,12 @@ def run() -> None:
         run_data["error_message"] = str(exc)
 
         # Best-effort: try to log to Sheets and notify Telegram
-        try:
-            service_account_info = conf.google_service_account_info()
-            sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
-        except Exception as sheet_exc:
-            logger.error("Could not write run_log after failure: %s", sheet_exc)
+        if not isinstance(exc, PermissionError):
+            try:
+                service_account_info = conf.google_service_account_info()
+                sheets.append_run_log(service_account_info, conf.google_sheet_id, run_data)
+            except Exception as sheet_exc:
+                logger.error("Could not write run_log after failure: %s", sheet_exc)
 
         try:
             notifier.send_error(conf.telegram_bot_token, conf.telegram_chat_id, str(exc))
