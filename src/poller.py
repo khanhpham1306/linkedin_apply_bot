@@ -107,12 +107,20 @@ def _handle_apply(
     title = job.get("title", "Unknown Role")
     company = job.get("company", "Unknown Company")
 
-    # 2. Status message
-    _send_message(
-        token, chat_id,
-        f"⏳ <b>Tailoring CV</b> for <b>{title}</b> @ {company}…\n"
-        f"This usually takes 20–40 seconds.",
-    )
+    # 2. Confirm click received; warn if CV was already sent for this job
+    if job.get("status") == "APPLIED":
+        _send_message(
+            token, chat_id,
+            f"✅ Got your apply request for <b>{title}</b> @ {company}!\n"
+            f"ℹ️ You've already applied for this job before — re-tailoring and re-sending your CV now.\n"
+            f"⏳ This usually takes 20–40 seconds.",
+        )
+    else:
+        _send_message(
+            token, chat_id,
+            f"✅ Got your apply request for <b>{title}</b> @ {company}!\n"
+            f"⏳ Tailoring your CV now — this usually takes 20–40 seconds.",
+        )
 
     # 3. Tailor CV via Claude
     if not anthropic_api_key:
