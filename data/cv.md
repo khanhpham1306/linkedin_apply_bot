@@ -1,6 +1,6 @@
 # Phạm Gia Khanh
 
-**Senior Manager | Strategy & Product | Retail Operations**
+**Head of Strategy & Commercial | Retail Operations**
 
 Ho Chi Minh City, Vietnam | 094 760 8550 | khanhp.hcmc@gmail.com | linkedin.com/in/pgkhanh/
 
@@ -25,23 +25,32 @@ Strategy and product leader with 7+ years driving growth across luxury retail, m
 
 ### Senior Strategist | Category & Retail Manager — Phu Nhuan Jewelry Co. Ltd. (Jan 2023 – Present)
 
-Category Lead — Mancode by PNJ (Mass-Market Expansion):
-Held full P&L accountability for a 1,100 billion VND portfolio, driving aggressive revenue targets across a matrix organization. Directed full product lifecycle including sourcing, pricing, and launch campaigns; lifted the brand's gross margin +9 percentage points FY2024 while achieving 80%+ sell-through for new collections.
+**Category Lead — Mancode by PNJ (Mass-Market Expansion):**
 
-Retail and Distribution Head — Canali Vietnam (Luxury Turnaround):
-Spearheaded the distribution takeover of Italian luxury brand Canali from a 4-year incumbent, establishing rigorous customer-centric SOPs. Doubled annual revenue target from 20B VND (Year 1) to 40B VND (Year 2). Led an 8-person boutique sales team to deliver Italian luxury service standards, increasing quarterly revenue +34% (Q1 2025) and transaction value +15%. Deployed a 2B VND trade marketing budget to build an incentivized network of lead drivers and execute exclusive VIP workshops.
+- Full P&L accountability for 1,100B VND portfolio; drove revenue targets across matrix organisation
+- Directed end-to-end product lifecycle: sourcing, pricing, launch campaigns
+- Lifted gross margin +9pp (FY2024); achieved 80%+ sell-through on new collections
+
+**Retail & Distribution Head — Canali Vietnam (Luxury Turnaround):**
+
+- Spearheaded distribution takeover from 4-year incumbent; built customer-centric SOPs
+- Doubled annual revenue target from 20B to 40B VND within two years
+- Led 8-person boutique team; +34% quarterly revenue (Q1 2025), +15% transaction value
+- Deployed 2B VND trade marketing budget for VIP workshops and lead-driver network
 
 ### User Experience Researcher — VNG Corp (Nov 2021 – Dec 2022)
 
-Conducted 20+ mixed-method studies totaling VND 1B in external fees at 80% cost savings using in-house resources. Automated statistical analyses (cluster, factor, correspondence) in R and Python, reducing reporting turnaround from 1 week to under 30 minutes. Presented actionable insights to product and marketing leads, shaping user activation, persona segmentation, and brand-health tracking.
+- Conducted 20+ mixed-method studies at 80% cost savings (1B VND in-house vs external)
+- Automated statistical analyses in R/Python, cutting reporting from 1 week to 30 minutes
 
 ### Consumer Insight Executive — Nielsen Vietnam (Nov 2018 – Oct 2021)
 
-Won and delivered over USD 200K in custom research for fintech, telecom, auto, FMCG, and beverage clients. Designed end-to-end studies, managed fieldwork, moderated focus groups, and presented C-suite recommendations that informed 5-year strategies, product launches, and media spend.
+- Won and delivered USD 200K+ in custom research across fintech, telecom, auto, FMCG
+- Presented C-suite recommendations informing 5-year strategies and product launches
 
 ### Assurance Associate — PwC Vietnam (Dec 2017 – Aug 2018)
 
-Audited financial statements for Colgate-Palmolive and Robert Bosch; identified process risks and compliance gaps, ensuring regulatory adherence. Enhanced Excel-based analytics capabilities to improve efficiency and accuracy.
+- Audited financials for Colgate-Palmolive and Robert Bosch; identified compliance gaps and process risks
 
 ## Education
 

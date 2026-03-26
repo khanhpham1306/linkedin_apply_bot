@@ -29,7 +29,7 @@ body {
     font-family: "Liberation Sans", Arial, Helvetica, sans-serif;
     font-size: 10pt;
     color: #222222;
-    line-height: 1.35;
+    line-height: 1.30;
     margin: 0;
     padding: 0;
 }
@@ -85,7 +85,7 @@ h2 {
     letter-spacing: 0.07em;
     color: #0f4c81;
     border-bottom: 0.75pt solid #0f4c81;
-    margin: 10pt 0 3pt 0;
+    margin: 8pt 0 2pt 0;
     padding-bottom: 2pt;
     page-break-after: avoid;
 }
@@ -95,7 +95,7 @@ h3 {
     font-size: 10pt;
     font-weight: bold;
     color: #1a1a2e;
-    margin: 6pt 0 1pt 0;
+    margin: 5pt 0 1pt 0;
     page-break-after: avoid;
 }
 
@@ -130,7 +130,7 @@ em {
     background: #f0f4fa;
     border-left: 3pt solid #0f4c81;
     padding: 6pt 10pt 6pt 16pt;
-    margin: 4pt 0 8pt 0;
+    margin: 3pt 0 6pt 0;
     list-style: none;
 }
 
@@ -152,7 +152,7 @@ em {
 }
 
 #awards-and-leadership + ul li {
-    margin: 2pt 0;
+    margin: 1pt 0;
     padding-left: 0;
 }
 
