@@ -7,6 +7,7 @@ Usage:
 """
 
 import base64
+import re
 from pathlib import Path
 
 import markdown as _markdown
@@ -35,17 +36,27 @@ body {
 
 /* ── Name / header ── */
 h1 {
-    font-size: 15pt;
-    color: #1a1a2e;
-    border-bottom: 2pt solid #1a1a2e;
-    padding-bottom: 4pt;
-    margin: 0 0 4pt 0;
-    line-height: 1.2;
+    font-size: 20pt;
+    font-weight: 800;
+    color: #0f4c81;
+    border-bottom: 2.5pt solid #0f4c81;
+    padding-bottom: 5pt;
+    margin: 0 0 2pt 0;
+    line-height: 1.15;
 }
 
-/* Contact line is the first <p> after h1 */
+/* Subtitle line (bold paragraph right after name) */
 h1 + p {
-    font-size: 9pt;
+    font-size: 11pt;
+    color: #1a1a2e;
+    font-weight: 600;
+    margin: 0 0 2pt 0;
+    letter-spacing: 0.03em;
+}
+
+/* Contact line (second paragraph after name) */
+h1 + p + p {
+    font-size: 8.5pt;
     color: #555555;
     margin: 0 0 10pt 0;
 }
@@ -57,11 +68,11 @@ h1 + p {
 }
 
 .profile-photo {
-    width: 78pt;
-    height: 78pt;
+    width: 82pt;
+    height: 82pt;
     border-radius: 50%;
     object-fit: cover;
-    border: 1.5pt solid #1a1a2e;
+    border: 2pt solid #0f4c81;
     display: block;
 }
 
@@ -72,8 +83,8 @@ h2 {
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: #1a1a2e;
-    border-bottom: 0.75pt solid #cccccc;
+    color: #0f4c81;
+    border-bottom: 0.75pt solid #0f4c81;
     margin: 10pt 0 3pt 0;
     padding-bottom: 2pt;
     page-break-after: avoid;
@@ -113,6 +124,43 @@ strong {
 em {
     font-style: italic;
 }
+
+/* ── Key Achievements highlight box ── */
+#key-achievements + ul {
+    background: #f0f4fa;
+    border-left: 3pt solid #0f4c81;
+    padding: 6pt 10pt 6pt 16pt;
+    margin: 4pt 0 8pt 0;
+    list-style: none;
+}
+
+#key-achievements + ul li {
+    margin: 3pt 0;
+    padding-left: 0;
+}
+
+#key-achievements + ul li::before {
+    content: "\\25b8  ";
+    color: #0f4c81;
+    font-weight: bold;
+}
+
+/* ── Awards inline styling ── */
+#awards-and-leadership + ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+#awards-and-leadership + ul li {
+    margin: 2pt 0;
+    padding-left: 0;
+}
+
+#awards-and-leadership + ul li::before {
+    content: "\\2605  ";
+    color: #0f4c81;
+    font-size: 8pt;
+}
 """
 
 _HTML_TEMPLATE = """\
@@ -137,9 +185,21 @@ def _photo_data_url() -> str | None:
     return f"data:image/jpeg;base64,{b64}"
 
 
+def _add_heading_ids(html: str) -> str:
+    """Add id attributes to h2 elements based on their slugified text content."""
+
+    def _slugify(match: re.Match) -> str:
+        text = match.group(1)
+        slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+        return f'<h2 id="{slug}">{text}</h2>'
+
+    return re.sub(r"<h2>([^<]+)</h2>", _slugify, html)
+
+
 def _render_html(md_text: str) -> str:
     """Convert Markdown text to a complete HTML document string."""
     body = _markdown.markdown(md_text, extensions=["nl2br"])
+    body = _add_heading_ids(body)
     photo_url = _photo_data_url()
     if photo_url:
         photo_tag = (

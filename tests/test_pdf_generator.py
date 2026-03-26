@@ -38,7 +38,7 @@ def test_render_html_contains_expected_tags():
     html = _render_html(md)
 
     assert "<h1>" in html
-    assert "<h2>" in html
+    assert "<h2" in html
     assert "<h3>" in html
     assert "<li>" in html
 
