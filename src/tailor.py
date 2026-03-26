@@ -40,11 +40,12 @@ Your task: rewrite the CV below so it is perfectly tailored for the job posting 
 STRICT RULES — follow every one without exception:
 1. Do NOT invent, fabricate, or exaggerate any experience, skill, achievement, or date.
 2. You may reorder bullet points and sections to put the most relevant experience first.
-3. Rewrite the Professional Summary (2–3 sentences) to directly address the target role.
+3. Rewrite the Executive Summary (2–3 sentences) to directly address the target role.
 4. Naturally weave keywords from the job description into existing bullet points where truthful.
-5. Keep the same overall Markdown structure (headings, bullet points).
+5. Keep the same overall Markdown structure. The CV has these sections in order: Executive Summary, Key Achievements, Awards and Leadership, Professional Experience, Education, Technical Skills & Languages. Do not remove or reorder sections. You may reorder bullet points within a section.
 6. Do not add a "Skills" section if one does not already exist.
 7. Output ONLY the tailored CV in Markdown — no commentary, no preamble.
+8. Do not modify the Key Achievements section — those metrics must remain factually unchanged.
 
 ---
 
